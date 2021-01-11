@@ -1,8 +1,10 @@
 mod op_struct;
-
-use std::sync::atomic::{AtomicU64, Ordering};
+mod scalar;
+mod variable;
 
 use op_struct::*;
+use variable::Context;
+pub use variable::Variable;
 
 static GLOBAL_CONTEXT: Context = Context::new();
 type VariableUID = u64;
@@ -29,67 +31,6 @@ pub trait Diff: Sized {
         Self::ValueType: std::ops::Mul<Self::ValueType, Output = Self::ValueType>,
     {
         Multiplication::new(self, rhs)
-    }
-}
-
-type Scalar = f64;
-
-impl Diff for Scalar {
-    type ValueType = Scalar;
-
-    type ForwardDiff = Scalar;
-
-    fn val(&self) -> Self::ValueType {
-        *self
-    }
-
-    fn forward_diff(&self, _with_respect_to: VariableUID) -> Self::ForwardDiff {
-        0.
-    }
-}
-
-struct Context {
-    n_vars: AtomicU64,
-}
-
-impl Context {
-    const fn new() -> Self {
-        Context {
-            n_vars: AtomicU64::new(0),
-        }
-    }
-
-    fn variable<V>(&self, value: V) -> Variable<V> {
-        let vuid = self.n_vars.fetch_add(1, Ordering::Relaxed);
-        Variable { vuid, value }
-    }
-}
-
-pub struct Variable<ValueType> {
-    vuid: VariableUID,
-    value: ValueType,
-}
-
-impl<V> Variable<V> {
-    pub fn new(value: V) -> Self {
-        GLOBAL_CONTEXT.variable(value)
-    }
-}
-
-impl Diff for Variable<Scalar> {
-    type ValueType = Scalar;
-    type ForwardDiff = Scalar;
-
-    fn val(&self) -> Self::ValueType {
-        self.value
-    }
-
-    fn forward_diff(&self, with_respect_to: VariableUID) -> Self::ForwardDiff {
-        if with_respect_to == self.vuid {
-            1.
-        } else {
-            0.
-        }
     }
 }
 
