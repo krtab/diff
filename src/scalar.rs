@@ -2,6 +2,7 @@ use super::{Diff, VariableUID};
 use num_traits::Zero;
 
 macro_rules! impl_diff_for_scalar {
+    () => {};
     ($f:ty $(, $fs:ty)*) => {
         impl Diff for $f {
             type ValueType = Self;
@@ -16,6 +17,8 @@ macro_rules! impl_diff_for_scalar {
                 <$f>::zero()
             }
         }
+
+        impl_diff_for_scalar!($($fs),*);
     };
 }
 
