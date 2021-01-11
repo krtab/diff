@@ -1,5 +1,7 @@
 use std::sync::atomic::{AtomicU64, Ordering};
 
+use crate::AsVariableUID;
+
 use super::{Diff, VariableUID, GLOBAL_CONTEXT};
 
 pub(crate) struct Context {
@@ -15,7 +17,10 @@ impl Context {
 
     pub(crate) fn variable<V>(&self, value: V) -> Variable<V> {
         let vuid = self.n_vars.fetch_add(1, Ordering::Relaxed);
-        Variable { vuid, value }
+        Variable {
+            vuid: VariableUID(vuid),
+            value,
+        }
     }
 }
 
@@ -27,6 +32,15 @@ pub struct Variable<ValueType> {
 impl<V> Variable<V> {
     pub fn new(value: V) -> Self {
         GLOBAL_CONTEXT.variable(value)
+    }
+    pub fn vuid(&self) -> VariableUID {
+        self.vuid
+    }
+}
+
+impl<'a, V> AsVariableUID for &'a Variable<V> {
+    fn as_vuid(&self) -> VariableUID {
+        self.vuid()
     }
 }
 
@@ -44,8 +58,8 @@ where
         self.value
     }
 
-    fn forward_diff(&self, with_respect_to: VariableUID) -> Self::ForwardDiff {
-        if with_respect_to == self.vuid {
+    fn forward_diff<UID: AsVariableUID>(&self, with_respect_to: UID) -> Self::ForwardDiff {
+        if with_respect_to.as_vuid() == self.vuid {
             F::one()
         } else {
             F::zero()

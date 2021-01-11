@@ -1,4 +1,4 @@
-use super::{Diff, VariableUID};
+use super::{AsVariableUID, Diff};
 use num_traits::Zero;
 
 macro_rules! impl_diff_for_scalar {
@@ -13,7 +13,7 @@ macro_rules! impl_diff_for_scalar {
                 *self
             }
 
-            fn forward_diff(&self, _with_respect_to: VariableUID) -> Self::ForwardDiff {
+            fn forward_diff<UID : AsVariableUID>(&self, _with_respect_to: UID) -> Self::ForwardDiff {
                 <$f>::zero()
             }
         }

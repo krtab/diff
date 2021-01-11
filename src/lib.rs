@@ -1,13 +1,28 @@
 mod op_struct;
 mod scalar;
+mod std_ops;
 mod variable;
+
+use std::borrow::Borrow;
 
 use op_struct::*;
 use variable::Context;
 pub use variable::Variable;
 
 static GLOBAL_CONTEXT: Context = Context::new();
-type VariableUID = u64;
+
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
+pub struct VariableUID(u64);
+
+pub trait AsVariableUID: Copy {
+    fn as_vuid(&self) -> VariableUID;
+}
+
+impl<'a, T: Borrow<VariableUID> + Copy> AsVariableUID for T {
+    fn as_vuid(&self) -> VariableUID {
+        *self.borrow()
+    }
+}
 
 pub trait Diff: Sized {
     type ValueType: Copy;
@@ -15,7 +30,7 @@ pub trait Diff: Sized {
     type ForwardDiff: Diff<ValueType = Self::ValueType>;
     fn val(&self) -> Self::ValueType;
 
-    fn forward_diff(&self, with_respect_to: VariableUID) -> Self::ForwardDiff;
+    fn forward_diff<UID: AsVariableUID>(&self, with_respect_to: UID) -> Self::ForwardDiff;
 
     fn add_diff<R>(self, rhs: R) -> Addition<Self, R, Self::ValueType>
     where
@@ -42,7 +57,7 @@ impl<'a, T: Diff> Diff for &'a T {
         (*self).val()
     }
 
-    fn forward_diff(&self, with_respect_to: VariableUID) -> Self::ForwardDiff {
+    fn forward_diff<UID: AsVariableUID>(&self, with_respect_to: UID) -> Self::ForwardDiff {
         (*self).forward_diff(with_respect_to)
     }
 }
@@ -54,10 +69,11 @@ mod tests {
     fn addition_fwd() {
         let x = Variable::new(1.);
         let y = Variable::new(10.);
-        let res = x.add_diff(y).add_diff(100.);
-        let dx = res.forward_diff(0);
-        let dy = res.forward_diff(1);
-        let dxdy = dx.forward_diff(1);
+        let yid = y.vuid();
+        let res = (&x).add_diff(y).add_diff(100.);
+        let dx = res.forward_diff(&x);
+        let dy = res.forward_diff(yid);
+        let dxdy = dx.forward_diff(yid);
         assert_eq!(res.val(), 111.);
         assert_eq!(dx.val(), 1.);
         assert_eq!(dy.val(), 1.);

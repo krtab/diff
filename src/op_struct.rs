@@ -1,4 +1,6 @@
-use super::{Diff, VariableUID};
+use crate::AsVariableUID;
+
+use super::Diff;
 
 pub struct Addition<L, R, V>
 where
@@ -41,7 +43,7 @@ where
         self.value
     }
 
-    fn forward_diff(&self, with_respect_to: VariableUID) -> Self::ForwardDiff {
+    fn forward_diff<UID: AsVariableUID>(&self, with_respect_to: UID) -> Self::ForwardDiff {
         self.left
             .forward_diff(with_respect_to)
             .add_diff(self.right.forward_diff(with_respect_to))
@@ -91,7 +93,7 @@ where
         self.value
     }
 
-    fn forward_diff(&self, with_respect_to: VariableUID) -> Self::ForwardDiff {
+    fn forward_diff<UID: AsVariableUID>(&self, with_respect_to: UID) -> Self::ForwardDiff {
         let lhs = self
             .left
             .val()
