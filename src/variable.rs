@@ -1,6 +1,6 @@
 use std::sync::atomic::{AtomicU64, Ordering};
 
-use crate::{AsVariableUID};
+use crate::AsVariableUID;
 
 use super::{Diff, VariableUID, GLOBAL_CONTEXT};
 

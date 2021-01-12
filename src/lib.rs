@@ -1,8 +1,8 @@
+pub mod capped_diff;
 pub mod op_struct;
 pub mod scalar;
 mod std_ops;
 pub mod variable;
-pub mod capped_diff;
 pub mod vector;
 
 use std::borrow::Borrow;

@@ -58,13 +58,12 @@ macro_rules! impl_std_ops {
                 self.mul_diff(rhs)
             }
         }
-        
+
     };
 }
 
 impl_std_ops!(<L, R>, Multiplication);
 impl_std_ops!(<L, R>, Addition);
-
 
 #[cfg(test)]
 mod tests {
