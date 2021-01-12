@@ -1,17 +1,15 @@
 use std::ops::{Add, Mul};
 
-use num_traits::{One, Zero};
-
-use crate::op_struct::{Addition, Multiplication};
+use crate::{
+    op_struct::{Addition, Multiplication},
+    scalar::Scalar,
+};
 
 use super::{Diff, Variable};
 
 impl<T, V> Add<T> for Variable<V>
 where
-    V: Copy,
-    V: Diff<ValueType = V>,
-    V: One,
-    V: Zero,
+    V: Scalar,
     T: Diff<ValueType = V>,
 {
     type Output = Addition<Self, T, V>;
@@ -23,10 +21,7 @@ where
 
 impl<T, V> Mul<T> for Variable<V>
 where
-    V: Copy,
-    V: Diff<ValueType = V>,
-    V: One,
-    V: Zero,
+    V: Scalar,
     T: Diff<ValueType = V>,
 {
     type Output = Multiplication<Self, T, V>;
@@ -36,73 +31,40 @@ where
     }
 }
 
-impl<T, L, R, V> Add<T> for Addition<L, R, V>
-where
-    V: Copy,
-    V: Diff<ValueType = V>,
-    V: One,
-    V: Zero,
-    T: Diff<ValueType = V>,
-    L: Diff<ValueType = V>,
-    R: Diff<ValueType = V>,
-{
-    type Output = Addition<Self, T, V>;
+macro_rules! impl_std_ops {
+    (<$($typearg:ident),*>,$type:ident) => {
+        impl<T, V, $($typearg),* > Add<T> for $type<$($typearg),*, V>
+        where
+            V: Scalar,
+            T: Diff<ValueType = V>,
+            $($typearg: Diff<ValueType = V>),*
+        {
+            type Output = Addition<Self, T, V>;
 
-    fn add(self, rhs: T) -> Self::Output {
-        self.add_diff(rhs)
-    }
+            fn add(self, rhs: T) -> Self::Output {
+                self.add_diff(rhs)
+            }
+        }
+
+        impl<T, V, $($typearg),* > Mul<T> for $type<$($typearg),*, V>
+        where
+            V: Scalar,
+            T: Diff<ValueType = V>,
+            $($typearg: Diff<ValueType = V>),*
+        {
+            type Output = Multiplication<Self, T, V>;
+
+            fn mul(self, rhs: T) -> Self::Output {
+                self.mul_diff(rhs)
+            }
+        }
+        
+    };
 }
 
-impl<T, L, R, V> Mul<T> for Addition<L, R, V>
-where
-    V: Copy,
-    V: Diff<ValueType = V>,
-    V: One,
-    V: Zero,
-    T: Diff<ValueType = V>,
-    L: Diff<ValueType = V>,
-    R: Diff<ValueType = V>,
-{
-    type Output = Multiplication<Self, T, V>;
+impl_std_ops!(<L, R>, Multiplication);
+impl_std_ops!(<L, R>, Addition);
 
-    fn mul(self, rhs: T) -> Self::Output {
-        self.mul_diff(rhs)
-    }
-}
-
-impl<T, L, R, V> Add<T> for Multiplication<L, R, V>
-where
-    V: Copy,
-    V: Diff<ValueType = V>,
-    V: One,
-    V: Zero,
-    T: Diff<ValueType = V>,
-    L: Diff<ValueType = V>,
-    R: Diff<ValueType = V>,
-{
-    type Output = Addition<Self, T, V>;
-
-    fn add(self, rhs: T) -> Self::Output {
-        self.add_diff(rhs)
-    }
-}
-
-impl<T, L, R, V> Mul<T> for Multiplication<L, R, V>
-where
-    V: Copy,
-    V: Diff<ValueType = V>,
-    V: One,
-    V: Zero,
-    T: Diff<ValueType = V>,
-    L: Diff<ValueType = V>,
-    R: Diff<ValueType = V>,
-{
-    type Output = Multiplication<Self, T, V>;
-
-    fn mul(self, rhs: T) -> Self::Output {
-        self.mul_diff(rhs)
-    }
-}
 
 #[cfg(test)]
 mod tests {

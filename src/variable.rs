@@ -1,6 +1,6 @@
 use std::sync::atomic::{AtomicU64, Ordering};
 
-use crate::AsVariableUID;
+use crate::{AsVariableUID, dyndiff::DynDiff};
 
 use super::{Diff, VariableUID, GLOBAL_CONTEXT};
 
@@ -25,8 +25,8 @@ impl Context {
 }
 
 pub struct Variable<ValueType> {
-    vuid: VariableUID,
-    value: ValueType,
+    pub(crate) vuid: VariableUID,
+    pub(crate) value: ValueType,
 }
 
 impl<V> Variable<V> {
@@ -64,5 +64,12 @@ where
         } else {
             F::zero()
         }
+    }
+
+    fn to_dyndiff(&self) -> DynDiff<Self::ValueType> {
+        DynDiff::Variable(Variable{
+            vuid: self.vuid,
+            value: self.value,
+        })
     }
 }
