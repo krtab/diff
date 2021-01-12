@@ -78,8 +78,4 @@ where
             _phantom: PhantomData,
         }
     }
-
-    fn to_dyndiff(&self) -> crate::dyndiff::DynDiff<Self::ValueType> {
-        todo!()
-    }
 }

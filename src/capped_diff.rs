@@ -28,10 +28,6 @@ impl<D: Diff> Diff for CappedDif<D, Cap01> {
     fn forward_diff<UID: crate::AsVariableUID>(&self, with_respect_to: UID) -> Self::ForwardDiff {
         self.inner.forward_diff(with_respect_to).val()
     }
-
-    fn to_dyndiff(&self) -> crate::dyndiff::DynDiff<Self::ValueType> {
-        self.inner.to_dyndiff()
-    }
 }
 
 macro_rules! capped_diff_gt1 {
@@ -57,10 +53,6 @@ macro_rules! capped_diff_gt1 {
                     inner: self.inner.forward_diff(with_respect_to),
                     _phantom: PhantomData,
                 }
-            }
-
-            fn to_dyndiff(&self) -> crate::dyndiff::DynDiff<Self::ValueType> {
-                self.inner.to_dyndiff()
             }
         }
     };

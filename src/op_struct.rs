@@ -1,4 +1,4 @@
-use crate::{dyndiff::DynDiff, scalar::Scalar, AsVariableUID};
+use crate::{scalar::Scalar, AsVariableUID};
 
 use super::Diff;
 
@@ -47,14 +47,6 @@ where
         self.left
             .forward_diff(with_respect_to)
             .add_diff(self.right.forward_diff(with_respect_to))
-    }
-
-    fn to_dyndiff(&self) -> DynDiff<Self::ValueType> {
-        DynDiff::Addition(Box::new(Addition {
-            value: self.val(),
-            left: self.left.to_dyndiff(),
-            right: self.right.to_dyndiff(),
-        }))
     }
 }
 
@@ -111,13 +103,5 @@ where
             .val()
             .mul_diff(self.left.forward_diff(with_respect_to));
         lhs.add_diff(rhs)
-    }
-
-    fn to_dyndiff(&self) -> crate::dyndiff::DynDiff<Self::ValueType> {
-        DynDiff::Multiplication(Box::new(Multiplication {
-            value: self.val(),
-            left: self.left.to_dyndiff(),
-            right: self.right.to_dyndiff(),
-        }))
     }
 }

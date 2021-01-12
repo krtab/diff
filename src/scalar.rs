@@ -1,4 +1,4 @@
-use crate::{AsVariableUID, Diff, dyndiff::DynDiff};
+use crate::{AsVariableUID, Diff};
 use num_traits::{One, Zero};
 
 pub trait Scalar: Zero + One + Copy + Diff<ValueType = Self> {}
@@ -26,10 +26,6 @@ macro_rules! impl_diff_for_scalar {
 
             fn forward_diff<UID : AsVariableUID>(&self, _with_respect_to: UID) -> Self::ForwardDiff {
                 <$f>::zero()
-            }
-
-            fn to_dyndiff(&self) -> DynDiff<Self> {
-                DynDiff::Value(*self)
             }
         }
 

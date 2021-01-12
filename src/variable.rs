@@ -1,6 +1,6 @@
 use std::sync::atomic::{AtomicU64, Ordering};
 
-use crate::{AsVariableUID, dyndiff::DynDiff};
+use crate::{AsVariableUID};
 
 use super::{Diff, VariableUID, GLOBAL_CONTEXT};
 
@@ -64,12 +64,5 @@ where
         } else {
             F::zero()
         }
-    }
-
-    fn to_dyndiff(&self) -> DynDiff<Self::ValueType> {
-        DynDiff::Variable(Variable{
-            vuid: self.vuid,
-            value: self.value,
-        })
     }
 }

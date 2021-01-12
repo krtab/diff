@@ -2,13 +2,11 @@ pub mod op_struct;
 pub mod scalar;
 mod std_ops;
 pub mod variable;
-pub mod dyndiff;
 pub mod capped_diff;
 pub mod vector;
 
 use std::borrow::Borrow;
 
-use dyndiff::DynDiff;
 use op_struct::*;
 use scalar::Scalar;
 use variable::Context;
@@ -37,8 +35,6 @@ pub trait Diff: Sized {
 
     fn forward_diff<UID: AsVariableUID>(&self, with_respect_to: UID) -> Self::ForwardDiff;
 
-    fn to_dyndiff(&self) -> DynDiff<Self::ValueType>;
-
     fn add_diff<R>(self, rhs: R) -> Addition<Self, R, Self::ValueType>
     where
         R: Diff<ValueType = Self::ValueType>,
@@ -66,10 +62,6 @@ impl<'a, T: Diff> Diff for &'a T {
 
     fn forward_diff<UID: AsVariableUID>(&self, with_respect_to: UID) -> Self::ForwardDiff {
         (*self).forward_diff(with_respect_to)
-    }
-
-    fn to_dyndiff(&self) -> DynDiff<Self::ValueType> {
-        (*self).to_dyndiff()
     }
 }
 
