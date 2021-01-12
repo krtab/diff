@@ -3,6 +3,7 @@ pub mod scalar;
 mod std_ops;
 pub mod variable;
 pub mod dyndiff;
+pub mod capped_diff;
 
 use std::borrow::Borrow;
 
