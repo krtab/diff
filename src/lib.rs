@@ -5,7 +5,6 @@ mod std_ops;
 pub mod variable;
 pub mod vector;
 pub mod save;
-pub mod unreachable;
 
 use std::borrow::Borrow;
 
