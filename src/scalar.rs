@@ -1,14 +1,12 @@
 use crate::{AsVariableUID, Diff};
-use num_traits::{One, Zero};
+use num_traits::{One, Zero, real::Real};
 
-pub trait Scalar: Zero + One + Copy + Diff<ValueType = Self> {}
+pub trait Scalar : Diff<ValueType = Self, ForwardDiff = Self> + Real {}
 
 impl<T> Scalar for T
 where
-    T: Zero,
-    T: One,
-    T: Copy,
-    T: Diff<ValueType = T>,
+    T: Diff<ValueType = T, ForwardDiff = T>,
+    T: Real
 {
 }
 

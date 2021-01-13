@@ -78,6 +78,7 @@ impl<V, Env> Save1<V, Env> {
     pub fn new<D, UID>(d: D, with_variables: &[UID]) -> Self
     where
         D: Diff<ValueType = V>,
+        D::ForwardDiff : Diff<ValueType = V >,
         UID: AsVariableUID,
         Env: FromIterator<(VariableUID, V)>,
     {
@@ -164,6 +165,8 @@ impl<V, Env, SubEnv> Save2<V, Env, SubEnv> {
     pub fn new<D, UID>(d: D, with_variables: &[UID]) -> Self
     where
         D: Diff<ValueType = V>,
+        D::ForwardDiff : Diff<ValueType = V >,
+        <D::ForwardDiff as Diff>::ForwardDiff : Diff<ValueType = V >,
         UID: AsVariableUID,
         Env: FromIterator<(VariableUID, Save1<V, SubEnv>)>,
         SubEnv: FromIterator<(VariableUID, V)>,

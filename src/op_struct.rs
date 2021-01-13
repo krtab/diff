@@ -1,11 +1,7 @@
-use crate::{scalar::Scalar, AsVariableUID};
-
-use super::Diff;
+use crate::{scalar::Scalar, AsVariableUID, Diff};
 
 pub struct Addition<L, R, V>
 where
-    L: Diff<ValueType = V>,
-    R: Diff<ValueType = V>,
 {
     left: L,
     right: R,
@@ -33,7 +29,8 @@ where
     V: Scalar,
     L: Diff<ValueType = V>,
     R: Diff<ValueType = V>,
-    L::ValueType: std::ops::Add<R::ValueType, Output = L::ValueType>,
+    L::ForwardDiff: Diff<ValueType=V>,
+    R::ForwardDiff: Diff<ValueType=V>,
 {
     type ValueType = L::ValueType;
 
@@ -64,7 +61,7 @@ impl<L, R, V> Multiplication<L, R, V>
 where
     L: Diff<ValueType = V>,
     R: Diff<ValueType = V>,
-    V: std::ops::Mul<V, Output = V>,
+    V: Scalar
 {
     pub fn new(left: L, right: R) -> Self {
         Multiplication {
@@ -81,8 +78,13 @@ where
     V: Diff<ValueType = V>,
     L: Diff<ValueType = V>,
     R: Diff<ValueType = V>,
-    V: std::ops::Add<V, Output = V>,
-    V: std::ops::Mul<V, Output = V>,
+    L::ForwardDiff: Diff< ValueType = V >,
+    R::ForwardDiff: Diff< ValueType = V >,
+    <L::ForwardDiff as Diff>::ForwardDiff : Diff<ValueType = V >,
+    <R::ForwardDiff as Diff>::ForwardDiff : Diff<ValueType = V >,
+    Multiplication<L,R::ForwardDiff, V> : Diff<ValueType = V>,
+    Multiplication<L::ForwardDiff,R, V> : Diff<ValueType = V>,
+
 {
     type ValueType = L::ValueType;
 
@@ -96,11 +98,9 @@ where
     fn forward_diff<UID: AsVariableUID>(&self, with_respect_to: UID) -> Self::ForwardDiff {
         let lhs = self
             .left
-            .val()
             .mul_diff(self.right.forward_diff(with_respect_to.as_vuid()));
         let rhs = self
             .right
-            .val()
             .mul_diff(self.left.forward_diff(with_respect_to.as_vuid()));
         lhs.add_diff(rhs)
     }

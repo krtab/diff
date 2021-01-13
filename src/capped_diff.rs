@@ -6,7 +6,6 @@ trait Cap {}
 
 struct CappedDif<D, C>
 where
-    D: Diff,
 {
     inner: D,
     _phantom: PhantomData<C>,
@@ -16,7 +15,11 @@ struct Cap01;
 
 impl Cap for Cap01 {}
 
-impl<D: Diff> Diff for CappedDif<D, Cap01> {
+impl<D: Diff> Diff for CappedDif<D, Cap01> 
+where 
+    D::ForwardDiff: Diff<ValueType = D::ValueType>
+
+{
     type ValueType = D::ValueType;
 
     type ForwardDiff = D::ValueType;

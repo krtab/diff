@@ -37,7 +37,10 @@ macro_rules! impl_std_ops {
         where
             V: Scalar,
             T: Diff<ValueType = V>,
-            $($typearg: Diff<ValueType = V>),*
+            T::ForwardDiff : Diff<ValueType = V>,
+            $($typearg: Diff<ValueType = V>),*,
+            $($typearg::ForwardDiff: Diff<ValueType = V>),*,
+            $(<$typearg::ForwardDiff as Diff>::ForwardDiff : Diff<ValueType = V >),*
         {
             type Output = Addition<Self, T, V>;
 
@@ -50,7 +53,9 @@ macro_rules! impl_std_ops {
         where
             V: Scalar,
             T: Diff<ValueType = V>,
-            $($typearg: Diff<ValueType = V>),*
+            $($typearg: Diff<ValueType = V>),*,
+            $($typearg::ForwardDiff: Diff<ValueType = V>),*,
+            $(<$typearg::ForwardDiff as Diff>::ForwardDiff : Diff<ValueType = V >),*
         {
             type Output = Multiplication<Self, T, V>;
 

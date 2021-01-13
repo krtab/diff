@@ -1,6 +1,6 @@
 use std::sync::atomic::{AtomicU64, Ordering};
 
-use crate::AsVariableUID;
+use crate::{AsVariableUID, scalar::Scalar};
 
 use super::{Diff, VariableUID, GLOBAL_CONTEXT};
 
@@ -51,10 +51,7 @@ impl<V> AsVariableUID for Variable<V> {
 
 impl<F> Diff for Variable<F>
 where
-    F: Copy,
-    F: Diff<ValueType = F>,
-    F: num_traits::One,
-    F: num_traits::Zero,
+    F: Scalar
 {
     type ValueType = F;
     type ForwardDiff = F;

@@ -5,9 +5,11 @@ mod std_ops;
 pub mod variable;
 pub mod vector;
 pub mod save;
+pub mod non_op_functions_struct;
 
 use std::borrow::Borrow;
 
+use non_op_functions_struct::Exp;
 use op_struct::*;
 use scalar::Scalar;
 use variable::Context;
@@ -31,7 +33,8 @@ impl<T: Borrow<VariableUID>> AsVariableUID for T {
 pub trait Diff: Sized {
     type ValueType: Scalar;
 
-    type ForwardDiff: Diff<ValueType = Self::ValueType>;
+    type ForwardDiff;
+    
     fn val(&self) -> Self::ValueType;
 
     fn forward_diff<UID: AsVariableUID>(&self, with_respect_to: UID) -> Self::ForwardDiff;
@@ -39,7 +42,6 @@ pub trait Diff: Sized {
     fn add_diff<R>(self, rhs: R) -> Addition<Self, R, Self::ValueType>
     where
         R: Diff<ValueType = Self::ValueType>,
-        Self::ValueType: std::ops::Add<Self::ValueType, Output = Self::ValueType>,
     {
         Addition::new(self, rhs)
     }
@@ -47,9 +49,13 @@ pub trait Diff: Sized {
     fn mul_diff<R>(self, rhs: R) -> Multiplication<Self, R, Self::ValueType>
     where
         R: Diff<ValueType = Self::ValueType>,
-        Self::ValueType: std::ops::Mul<Self::ValueType, Output = Self::ValueType>,
     {
         Multiplication::new(self, rhs)
+    }
+
+    fn exp_diff(self) -> Exp<Self, Self::ValueType>
+    {
+        Exp::new(self)
     }
 }
 
