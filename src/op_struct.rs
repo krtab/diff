@@ -45,8 +45,8 @@ where
 
     fn forward_diff<UID: AsVariableUID>(&self, with_respect_to: UID) -> Self::ForwardDiff {
         self.left
-            .forward_diff(with_respect_to)
-            .add_diff(self.right.forward_diff(with_respect_to))
+            .forward_diff(with_respect_to.as_vuid())
+            .add_diff(self.right.forward_diff(with_respect_to.as_vuid()))
     }
 }
 
@@ -97,11 +97,11 @@ where
         let lhs = self
             .left
             .val()
-            .mul_diff(self.right.forward_diff(with_respect_to));
+            .mul_diff(self.right.forward_diff(with_respect_to.as_vuid()));
         let rhs = self
             .right
             .val()
-            .mul_diff(self.left.forward_diff(with_respect_to));
+            .mul_diff(self.left.forward_diff(with_respect_to.as_vuid()));
         lhs.add_diff(rhs)
     }
 }

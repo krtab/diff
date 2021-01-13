@@ -37,8 +37,13 @@ impl<V> Variable<V> {
         self.vuid
     }
 }
-
 impl<'a, V> AsVariableUID for &'a Variable<V> {
+    fn as_vuid(&self) -> VariableUID {
+        self.vuid()
+    }
+}
+
+impl<V> AsVariableUID for Variable<V> {
     fn as_vuid(&self) -> VariableUID {
         self.vuid()
     }

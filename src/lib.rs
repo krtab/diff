@@ -4,6 +4,8 @@ pub mod scalar;
 mod std_ops;
 pub mod variable;
 pub mod vector;
+pub mod save;
+pub mod unreachable;
 
 use std::borrow::Borrow;
 
@@ -17,11 +19,11 @@ static GLOBAL_CONTEXT: Context = Context::new();
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
 pub struct VariableUID(u64);
 
-pub trait AsVariableUID: Copy {
+pub trait AsVariableUID {
     fn as_vuid(&self) -> VariableUID;
 }
 
-impl<'a, T: Borrow<VariableUID> + Copy> AsVariableUID for T {
+impl<T: Borrow<VariableUID>> AsVariableUID for T {
     fn as_vuid(&self) -> VariableUID {
         *self.borrow()
     }
