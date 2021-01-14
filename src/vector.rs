@@ -1,83 +1,63 @@
-use std::marker::PhantomData;
+use crate::{Diff, Expr, VariableUID};
 
-use crate::{scalar::Scalar, Diff, Expr, VariableUID};
-
-pub trait DiffIter {
-    type ValueType: Scalar;
-    type DiffType: Diff<ValueType = Self::ValueType>;
-}
-
-pub struct ForwardDiffIter<I, D> {
+#[derive(Clone)]
+pub struct ForwardDiffIter<I> {
     inner: I,
     wrt: VariableUID,
-    _phantom: PhantomData<D>,
 }
 
-impl<I, D> Clone for ForwardDiffIter<I, D>
+impl<I> Iterator for ForwardDiffIter<I>
 where
-    I: Clone,
+    I: Iterator,
+    I::Item: Diff,
 {
-    fn clone(&self) -> Self {
-        Self {
-            inner: self.inner.clone(),
-            wrt: self.wrt,
-            _phantom: PhantomData,
-        }
-    }
-}
-
-impl<D, I> Iterator for ForwardDiffIter<I, D>
-where
-    D: Diff,
-    I: Iterator<Item = D>,
-{
-    type Item = D::ForwardDiff;
+    type Item = <I::Item as Diff>::ForwardDiff;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.inner.next().map(|d| d.forward_diff(self.wrt))
     }
 }
 
-pub struct Sum<I, D, V> {
+#[derive(Clone)]
+pub struct Sum<I> {
     inner: I,
-    _phantom: PhantomData<(D, V)>,
 }
 
-impl<I, D, V> Sum<I, D, V> {
-    pub fn new<T: IntoIterator<IntoIter = I, Item = D>>(x: T) -> Self {
-        Self {
-            inner: x.into_iter(),
-            _phantom: PhantomData,
-        }
+impl<I> Sum<I>
+where
+    I: Iterator,
+{
+    pub fn new(x: I) -> Self {
+        Self { inner: x }
     }
 }
 
-impl<I, D, V: Scalar> Expr for Sum<I, D, V> {
-    type ValueType = V;
+impl<I> Expr for Sum<I>
+where
+    I: Iterator,
+    I::Item: Expr,
+{
+    type ValueType = <I::Item as Expr>::ValueType;
 }
 
-impl<I, D, V> Diff for Sum<I, D, V>
+impl<I> Diff for Sum<I>
 where
-    I: Iterator<Item = D> + Clone,
-    D: Diff<ValueType = V>,
-    V: Scalar,
-    V: std::iter::Sum,
+    I: Iterator + Clone,
+    I::Item: Diff,
+    Self::ValueType: std::iter::Sum,
 {
-    type ForwardDiff = Sum<ForwardDiffIter<I, D>, D::ForwardDiff, V>;
+    type ForwardDiff = Sum<ForwardDiffIter<I>>;
 
     fn val(&self) -> Self::ValueType {
         self.inner.clone().map(|d| d.val()).sum()
     }
 
     fn forward_diff<UID: crate::AsVariableUID>(&self, with_respect_to: UID) -> Self::ForwardDiff {
-        // todo!()
         Sum {
             inner: ForwardDiffIter {
                 inner: self.inner.clone(),
                 wrt: with_respect_to.as_vuid(),
-                _phantom: PhantomData,
             },
-            _phantom: PhantomData,
         }
     }
 }
