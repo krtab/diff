@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use crate::{scalar::Scalar, Diff, VariableUID};
+use crate::{scalar::Scalar, Diff, Expr, VariableUID};
 
 pub trait DiffIter {
     type ValueType: Scalar;
@@ -52,6 +52,10 @@ impl<I, D, V> Sum<I, D, V> {
     }
 }
 
+impl<I, D, V: Scalar> Expr for Sum<I, D, V> {
+    type ValueType = V;
+}
+
 impl<I, D, V> Diff for Sum<I, D, V>
 where
     I: Iterator<Item = D> + Clone,
@@ -59,8 +63,6 @@ where
     V: Scalar,
     V: std::iter::Sum,
 {
-    type ValueType = V;
-
     type ForwardDiff = Sum<ForwardDiffIter<I, D>, D::ForwardDiff, V>;
 
     fn val(&self) -> Self::ValueType {

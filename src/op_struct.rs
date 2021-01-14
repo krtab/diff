@@ -1,27 +1,35 @@
-use crate::{scalar::Scalar, AsVariableUID, Diff};
+use std::marker::PhantomData;
 
-pub struct Addition<L, R, V>
-where
-{
+use crate::{scalar::Scalar, AsVariableUID, Diff, Expr};
+
+pub struct Addition<L, R, V> {
     left: L,
     right: R,
-    value: V,
+    _value: PhantomData<V>,
 }
 
-impl<L, R, V> Addition<L, R, V>
-where
-    L: Diff<ValueType = V>,
-    R: Diff<ValueType = V>,
-
-    V: std::ops::Add<V, Output = V>,
-{
+impl<L, R, V> Addition<L, R, V> {
     pub fn new(left: L, right: R) -> Self {
         Addition {
-            value: left.val() + right.val(),
+            _value: PhantomData,
             left,
             right,
         }
     }
+}
+
+impl<L: Clone, R: Clone, V> Clone for Addition<L, R, V> {
+    fn clone(&self) -> Self {
+        Self {
+            left: self.left.clone(),
+            right: self.right.clone(),
+            _value: PhantomData,
+        }
+    }
+}
+
+impl<L, R, V: Scalar> Expr for Addition<L, R, V> {
+    type ValueType = V;
 }
 
 impl<L, R, V> Diff for Addition<L, R, V>
@@ -29,15 +37,11 @@ where
     V: Scalar,
     L: Diff<ValueType = V>,
     R: Diff<ValueType = V>,
-    L::ForwardDiff: Diff<ValueType=V>,
-    R::ForwardDiff: Diff<ValueType=V>,
 {
-    type ValueType = L::ValueType;
-
     type ForwardDiff = Addition<L::ForwardDiff, R::ForwardDiff, V>;
 
     fn val(&self) -> Self::ValueType {
-        self.value
+        self.left.val() + self.right.val()
     }
 
     fn forward_diff<UID: AsVariableUID>(&self, with_respect_to: UID) -> Self::ForwardDiff {
@@ -47,60 +51,60 @@ where
     }
 }
 
-pub struct Multiplication<L, R, V>
-where
-    L: Diff<ValueType = V>,
-    R: Diff<ValueType = V>,
-{
+pub struct Multiplication<L, R, V> {
     left: L,
     right: R,
-    value: V,
+    _value: PhantomData<V>,
 }
 
 impl<L, R, V> Multiplication<L, R, V>
 where
-    L: Diff<ValueType = V>,
-    R: Diff<ValueType = V>,
-    V: Scalar
+    V: Scalar,
 {
     pub fn new(left: L, right: R) -> Self {
         Multiplication {
-            value: left.val() * right.val(),
+            _value: PhantomData,
             left,
             right,
         }
     }
 }
 
+impl<L: Clone, R: Clone, V> Clone for Multiplication<L, R, V> {
+    fn clone(&self) -> Self {
+        Self {
+            left: self.left.clone(),
+            right: self.right.clone(),
+            _value: PhantomData,
+        }
+    }
+}
+
+impl<L, R, V: Scalar> Expr for Multiplication<L, R, V> {
+    type ValueType = V;
+}
+
 impl<L, R, V> Diff for Multiplication<L, R, V>
 where
     V: Scalar,
-    V: Diff<ValueType = V>,
-    L: Diff<ValueType = V>,
-    R: Diff<ValueType = V>,
-    L::ForwardDiff: Diff< ValueType = V >,
-    R::ForwardDiff: Diff< ValueType = V >,
-    <L::ForwardDiff as Diff>::ForwardDiff : Diff<ValueType = V >,
-    <R::ForwardDiff as Diff>::ForwardDiff : Diff<ValueType = V >,
-    Multiplication<L,R::ForwardDiff, V> : Diff<ValueType = V>,
-    Multiplication<L::ForwardDiff,R, V> : Diff<ValueType = V>,
-
+    L: Diff<ValueType = V> + Clone,
+    R: Diff<ValueType = V> + Clone,
 {
-    type ValueType = L::ValueType;
-
     type ForwardDiff =
-        Addition<Multiplication<V, R::ForwardDiff, V>, Multiplication<V, L::ForwardDiff, V>, V>;
+        Addition<Multiplication<L, R::ForwardDiff, V>, Multiplication<R, L::ForwardDiff, V>, V>;
 
     fn val(&self) -> Self::ValueType {
-        self.value
+        self.left.val() * self.right.val()
     }
 
     fn forward_diff<UID: AsVariableUID>(&self, with_respect_to: UID) -> Self::ForwardDiff {
         let lhs = self
             .left
+            .clone()
             .mul_diff(self.right.forward_diff(with_respect_to.as_vuid()));
         let rhs = self
             .right
+            .clone()
             .mul_diff(self.left.forward_diff(with_respect_to.as_vuid()));
         lhs.add_diff(rhs)
     }

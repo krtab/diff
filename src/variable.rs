@@ -1,8 +1,8 @@
 use std::sync::atomic::{AtomicU64, Ordering};
 
-use crate::{AsVariableUID, scalar::Scalar};
+use crate::{scalar::Scalar, AsVariableUID};
 
-use super::{Diff, VariableUID, GLOBAL_CONTEXT};
+use super::{Diff, Expr, VariableUID, GLOBAL_CONTEXT};
 
 pub(crate) struct Context {
     n_vars: AtomicU64,
@@ -49,11 +49,14 @@ impl<V> AsVariableUID for Variable<V> {
     }
 }
 
-impl<F> Diff for Variable<F>
-where
-    F: Scalar
-{
+impl<'a, F: Scalar> Expr for &'a Variable<F> {
     type ValueType = F;
+}
+
+impl<'a, F> Diff for &'a Variable<F>
+where
+    F: Scalar,
+{
     type ForwardDiff = F;
 
     fn val(&self) -> Self::ValueType {

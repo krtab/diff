@@ -1,11 +1,10 @@
-pub mod capped_diff;
+pub mod non_op_functions_struct;
 pub mod op_struct;
+pub mod save;
 pub mod scalar;
 mod std_ops;
 pub mod variable;
 pub mod vector;
-pub mod save;
-pub mod non_op_functions_struct;
 
 use std::borrow::Borrow;
 
@@ -30,37 +29,35 @@ impl<T: Borrow<VariableUID>> AsVariableUID for T {
     }
 }
 
-pub trait Diff: Sized {
-    type ValueType: Scalar;
+pub trait Diff: Expr {
+    type ForwardDiff: Expr<ValueType = Self::ValueType>;
 
-    type ForwardDiff;
-    
     fn val(&self) -> Self::ValueType;
 
     fn forward_diff<UID: AsVariableUID>(&self, with_respect_to: UID) -> Self::ForwardDiff;
+}
 
-    fn add_diff<R>(self, rhs: R) -> Addition<Self, R, Self::ValueType>
-    where
-        R: Diff<ValueType = Self::ValueType>,
-    {
+pub trait Expr: Sized {
+    type ValueType: Scalar;
+
+    fn add_diff<R>(self, rhs: R) -> Addition<Self, R, Self::ValueType> {
         Addition::new(self, rhs)
     }
 
-    fn mul_diff<R>(self, rhs: R) -> Multiplication<Self, R, Self::ValueType>
-    where
-        R: Diff<ValueType = Self::ValueType>,
-    {
+    fn mul_diff<R>(self, rhs: R) -> Multiplication<Self, R, Self::ValueType> {
         Multiplication::new(self, rhs)
     }
 
-    fn exp_diff(self) -> Exp<Self, Self::ValueType>
-    {
+    fn exp_diff(self) -> Exp<Self, Self::ValueType> {
         Exp::new(self)
     }
 }
 
-impl<'a, T: Diff> Diff for &'a T {
+impl<'a, T: Expr> Expr for &'a T {
     type ValueType = T::ValueType;
+}
+
+impl<'a, T: Diff> Diff for &'a T {
     type ForwardDiff = T::ForwardDiff;
 
     fn val(&self) -> Self::ValueType {
@@ -80,7 +77,7 @@ mod tests {
         let x = Variable::new(1.);
         let y = Variable::new(10.);
         let yid = y.vuid();
-        let res = (&x).add_diff(y).add_diff(100.);
+        let res = x.add_diff(&y).add_diff(100.);
         let dx = res.forward_diff(&x);
         let dy = res.forward_diff(yid);
         let dxdy = dx.forward_diff(yid);

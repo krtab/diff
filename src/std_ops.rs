@@ -3,14 +3,15 @@ use std::ops::{Add, Mul};
 use crate::{
     op_struct::{Addition, Multiplication},
     scalar::Scalar,
+    Expr,
 };
 
 use super::{Diff, Variable};
 
-impl<T, V> Add<T> for Variable<V>
+impl<'a, T, V> Add<T> for &'a Variable<V>
 where
     V: Scalar,
-    T: Diff<ValueType = V>,
+    T: Expr<ValueType = V>,
 {
     type Output = Addition<Self, T, V>;
 
@@ -19,7 +20,7 @@ where
     }
 }
 
-impl<T, V> Mul<T> for Variable<V>
+impl<'a, T, V> Mul<T> for &'a Variable<V>
 where
     V: Scalar,
     T: Diff<ValueType = V>,
@@ -34,6 +35,22 @@ where
 macro_rules! impl_std_ops {
     (<$($typearg:ident),*>,$type:ident) => {
         impl<T, V, $($typearg),* > Add<T> for $type<$($typearg),*, V>
+        where
+            V: Scalar,
+            T: Diff<ValueType = V>,
+            T::ForwardDiff : Diff<ValueType = V>,
+            $($typearg: Diff<ValueType = V>),*,
+            $($typearg::ForwardDiff: Diff<ValueType = V>),*,
+            $(<$typearg::ForwardDiff as Diff>::ForwardDiff : Diff<ValueType = V >),*
+        {
+            type Output = Addition<Self, T, V>;
+
+            fn add(self, rhs: T) -> Self::Output {
+                self.add_diff(rhs)
+            }
+        }
+
+        impl<'a, T, V, $($typearg),* > Add<T> for &'a $type<$($typearg),*, V>
         where
             V: Scalar,
             T: Diff<ValueType = V>,
@@ -64,6 +81,22 @@ macro_rules! impl_std_ops {
             }
         }
 
+        impl<'a, T, V, $($typearg),* > Mul<T> for &'a $type<$($typearg),*, V>
+        where
+            V: Scalar,
+            T: Diff<ValueType = V>,
+            T::ForwardDiff : Diff<ValueType = V>,
+            $($typearg: Diff<ValueType = V>),*,
+            $($typearg::ForwardDiff: Diff<ValueType = V>),*,
+            $(<$typearg::ForwardDiff as Diff>::ForwardDiff : Diff<ValueType = V >),*
+        {
+            type Output = Multiplication<Self, T, V>;
+
+            fn mul(self, rhs: T) -> Self::Output {
+                self.mul_diff(rhs)
+            }
+        }
+
     };
 }
 
@@ -79,7 +112,7 @@ mod tests {
         let xid = x.vuid();
         let y = Variable::new(10.);
         let yid = y.vuid();
-        let res = (x + y) * 3.;
+        let res = (&x + &y) * 3.;
         let dx = res.forward_diff(xid);
         let dy = res.forward_diff(yid);
         let dxdy = dx.forward_diff(yid);

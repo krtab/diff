@@ -1,6 +1,6 @@
 use std::{collections::HashMap, iter::FromIterator, marker::PhantomData, rc::Rc};
 
-use crate::{scalar::Scalar, AsVariableUID, Diff, VariableUID};
+use crate::{scalar::Scalar, AsVariableUID, Diff, Expr, VariableUID};
 
 pub trait SafeIndex {
     type ValueType;
@@ -33,6 +33,7 @@ where
     }
 }
 
+#[derive(Clone)]
 pub struct Save0<V, S> {
     v0: V,
     saved_vuids: S,
@@ -47,13 +48,15 @@ impl<V, S> Save0<V, S> {
     }
 }
 
+impl<V: Scalar, S> Expr for Save0<V, S> {
+    type ValueType = V;
+}
+
 impl<V, S> Diff for Save0<V, S>
 where
     V: Scalar,
     S: Set,
 {
-    type ValueType = V;
-
     type ForwardDiff = V;
 
     fn val(&self) -> Self::ValueType {
@@ -78,7 +81,7 @@ impl<V, Env> Save1<V, Env> {
     pub fn new<D, UID>(d: D, with_variables: &[UID]) -> Self
     where
         D: Diff<ValueType = V>,
-        D::ForwardDiff : Diff<ValueType = V >,
+        D::ForwardDiff: Diff<ValueType = V>,
         UID: AsVariableUID,
         Env: FromIterator<(VariableUID, V)>,
     {
@@ -101,7 +104,7 @@ impl<V, Env> Save1<V, Env> {
         V: Scalar,
         Env: FromIterator<(VariableUID, V)>,
     {
-        Self::new::<_,VariableUID>(v, &[])
+        Self::new::<_, VariableUID>(v, &[])
     }
 }
 
@@ -130,13 +133,15 @@ where
     }
 }
 
+impl<V: Scalar, Env> Expr for Save1<V, Env> {
+    type ValueType = V;
+}
+
 impl<V, Env> Diff for Save1<V, Env>
 where
     V: Scalar,
     Env: SafeIndex<ValueType = V>,
 {
-    type ValueType = V;
-
     type ForwardDiff = Save0<V, Rc<Env>>;
 
     fn val(&self) -> Self::ValueType {
@@ -165,8 +170,8 @@ impl<V, Env, SubEnv> Save2<V, Env, SubEnv> {
     pub fn new<D, UID>(d: D, with_variables: &[UID]) -> Self
     where
         D: Diff<ValueType = V>,
-        D::ForwardDiff : Diff<ValueType = V >,
-        <D::ForwardDiff as Diff>::ForwardDiff : Diff<ValueType = V >,
+        D::ForwardDiff: Diff<ValueType = V>,
+        <D::ForwardDiff as Diff>::ForwardDiff: Diff<ValueType = V>,
         UID: AsVariableUID,
         Env: FromIterator<(VariableUID, Save1<V, SubEnv>)>,
         SubEnv: FromIterator<(VariableUID, V)>,
@@ -185,6 +190,10 @@ impl<V, Env, SubEnv> Save2<V, Env, SubEnv> {
     }
 }
 
+impl<V: Scalar, Env, SubEnv> Expr for Save2<V, Env, SubEnv> {
+    type ValueType = V;
+}
+
 impl<V, Env, SubEnv> Diff for Save2<V, Env, SubEnv>
 where
     V: Scalar,
@@ -193,8 +202,6 @@ where
     SubEnv: Default,
     Env: Copy,
 {
-    type ValueType = V;
-
     type ForwardDiff = Save1<V, Rc<SubEnv>>;
 
     fn val(&self) -> Self::ValueType {
